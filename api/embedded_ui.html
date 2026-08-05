@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DermFlow Pro - AI Clinic Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+:root{--primary:#1e3a5f;--primary-light:#2c5282;--accent:#38a169;--bg:#f7fafc;--card:#fff;--text:#1a202c;--muted:#718096;--border:#e2e8f0;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+#app{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--primary);color:#fff;display:flex;flex-direction:column;position:fixed;height:100vh}
+.logo{padding:20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.logo-icon{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.nav{list-style:none;padding:12px;flex:1}
+.nav li{padding:12px 16px;border-radius:8px;cursor:pointer;margin-bottom:4px;font-size:14px;font-weight:500;color:rgba(255,255,255,.7);transition:.2s}
+.nav li:hover,.nav li.active{background:rgba(255,255,255,.12);color:#fff}
+.main{flex:1;margin-left:240px}
+.header{background:var(--card);padding:18px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.header h1{font-size:22px;color:var(--primary)}
+.content{padding:24px 28px}
+.view{display:none}.view.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:700;color:var(--primary)}
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;margin-bottom:20px}
+.card-h{padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.card-b{padding:16px 20px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 16px;font-size:11px;text-transform:uppercase;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border)}
+td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px}
+tr:hover td{background:var(--bg)}
+.btn{padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--primary);color:#fff}.btn-p:hover{background:var(--primary-light)}
+.btn-s{background:#fff;color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:var(--bg)}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
+.badge-g{background:#c6f6d5;color:#22543d}.badge-b{background:#bee3f8;color:#2a4365}
+.badge-y{background:#fefcbf;color:#744210}.badge-r{background:#fed7d7;color:#742a2a}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light),var(--primary));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.patient-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.pcard{border:2px solid var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:.2s}
+.pcard:hover,.pcard.sel{border-color:var(--primary);background:rgba(30,58,95,.04)}
+.pcard .av{width:48px;height:48px;margin:0 auto 10px;font-size:16px}
+.upload{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;background:var(--bg)}
+.upload:hover{border-color:var(--primary-light)}
+.scores{display:flex;flex-direction:column;gap:12px}
+.score-item{background:var(--bg);padding:12px 16px;border-radius:8px}
+.score-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:6px}
+.score-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 1s}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-g{display:flex;flex-direction:column;gap:4px}
+.form-g label{font-size:12px;font-weight:600;color:var(--muted)}
+.form-g input,.form-g select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.modal.on{display:flex}
+.modal-box{background:#fff;border-radius:var(--radius);width:100%;max-width:480px;max-height:90vh;overflow:auto}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.hidden{display:none!important}
+@media(max-width:768px){.sidebar{width:64px}.logo span,.nav li span{display:none}.main{margin-left:64px}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-icon">DF</div><span style="font-weight:700;font-size:18px">DermFlow</span></div>
+    <ul class="nav">
+      <li class="active" data-v="dash">Dashboard</li>
+      <li data-v="patients">Patients</li>
+      <li data-v="analyze">New Analysis</li>
+      <li data-v="settings">API Settings</li>
+    </ul>
+    <div style="padding:16px;font-size:12px;opacity:.7;border-top:1px solid rgba(255,255,255,.1)" id="mode-label">Mock Mode</div>
+  </aside>
+  <div class="main">
+    <div class="header"><h1 id="title">Dashboard</h1>
+      <button class="btn btn-p" onclick="showModal()">+ New Patient</button>
+    </div>
+    <div class="content">
+      <div class="view active" id="v-dash">
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Patients</div><div class="stat-val" id="st-p">—</div></div>
+          <div class="stat"><div class="stat-label">Analyses</div><div class="stat-val" id="st-a">—</div></div>
+          <div class="stat"><div class="stat-label">Treatment Plans</div><div class="stat-val" id="st-pl">—</div></div>
+          <div class="stat"><div class="stat-label">Avg Skin Score</div><div class="stat-val" id="st-sc">—</div></div>
+        </div>
+        <div class="card"><div class="card-h">Recent Analyses</div><div class="card-b" id="recent">Loading…</div></div>
+      </div>
+      <div class="view" id="v-patients">
+        <div class="card"><div class="card-h">Patient Directory</div>
+          <table><thead><tr><th>Name</th><th>Skin Type</th><th>DOB</th><th>Allergies</th><th></th></tr></thead>
+          <tbody id="pt-table"></tbody></table>
+        </div>
+      </div>
+      <div class="view" id="v-analyze">
+        <div class="card"><div class="card-h">1. Select Patient</div>
+          <div class="card-b"><div class="patient-grid" id="pt-select"></div></div>
+        </div>
+        <div class="card"><div class="card-h">2. Upload Photo</div>
+          <div class="card-b">
+            <div class="upload" id="drop" onclick="document.getElementById('file').click()">
+              Drop photo or click to browse<br><small style="color:var(--muted)">JPG/PNG · mock analysis works offline</small>
+            </div>
+            <input type="file" id="file" accept="image/*" hidden>
+            <div id="preview" class="hidden" style="margin-top:16px;text-align:center">
+              <img id="prev-img" style="max-width:220px;border-radius:10px;border:1px solid var(--border)">
+            </div>
+            <div style="margin-top:16px;text-align:right">
+              <button class="btn btn-p" id="btn-go" disabled onclick="runAnalysis()">Analyze Skin →</button>
+            </div>
+          </div>
+        </div>
+        <div class="card hidden" id="results-card"><div class="card-h">Results</div>
+          <div class="card-b" id="results"></div>
+        </div>
+      </div>
+      <div class="view" id="v-settings">
+        <div class="card"><div class="card-h">Perfect Corp API Keys</div>
+          <div class="card-b">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Toggle real APIs and paste keys. Mock mode works without keys.</p>
+            <label style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer">
+              <input type="checkbox" id="use-real"> <strong>Use Real Perfect Corp APIs</strong>
+            </label>
+            <div class="form-row">
+              <div class="form-g"><label>Skin Analysis Key</label><input id="k-skin" placeholder="sk-..."></div>
+              <div class="form-g"><label>File Upload Key</label><input id="k-upload" placeholder="sk-..."></div>
+            </div>
+            <div style="text-align:right;margin-top:12px">
+              <button class="btn btn-s" onclick="testCfg()">Test</button>
+              <button class="btn btn-p" onclick="saveCfg()">Save</button>
+            </div>
+            <p id="cfg-msg" style="margin-top:12px;font-size:13px"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-h">New Patient <span style="cursor:pointer;font-size:22px" onclick="hideModal()">×</span></div>
+    <form id="np-form" style="padding:20px">
+      <div class="form-row">
+        <div class="form-g"><label>Full Name *</label><input name="name" required></div>
+        <div class="form-g"><label>Email</label><input name="email" type="email"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-g"><label>Phone</label><input name="phone"></div>
+        <div class="form-g"><label>Date of Birth</label><input name="date_of_birth" type="date"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-g"><label>Skin Type</label>
+          <select name="skin_type"><option>Normal</option><option>Dry</option><option>Oily</option><option>Combination</option><option>Sensitive</option></select>
+        </div>
+        <div class="form-g"><label>Allergies</label><input name="allergies"></div>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <button type="button" class="btn btn-s" onclick="hideModal()">Cancel</button>
+        <button type="submit" class="btn btn-p">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+let curPatient=null, uploaded=null;
+const titles={dash:'Dashboard',patients:'Patient Directory',analyze:'New Skin Analysis',settings:'API Settings'};
+document.querySelectorAll('.nav li').forEach(li=>{
+  li.onclick=()=>{
+    document.querySelectorAll('.nav li').forEach(x=>x.classList.remove('active'));
+    li.classList.add('active');
+    const v=li.dataset.v;
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    document.getElementById('v-'+v).classList.add('active');
+    document.getElementById('title').textContent=titles[v]||'DermFlow';
+    if(v==='patients') loadPatients();
+    if(v==='analyze') loadSelect();
+    if(v==='settings') loadCfg();
+  };
+});
+function scoreClass(s){if(s>=80)return'badge-g';if(s>=65)return'badge-b';if(s>=50)return'badge-y';return'badge-r'}
+function initials(n){return(n||'?').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase()}
+async function loadDash(){
+  const s=await fetch('/api/dashboard/stats').then(r=>r.json());
+  document.getElementById('st-p').textContent=s.total_patients;
+  document.getElementById('st-a').textContent=s.total_analyses;
+  document.getElementById('st-pl').textContent=s.total_plans;
+  document.getElementById('st-sc').textContent=s.avg_skin_score||0;
+  document.getElementById('mode-label').textContent=(s.api_mode||'mock')==='real'?'Real APIs':'Mock Mode';
+  const rec=document.getElementById('recent');
+  if(!s.recent_analyses||!s.recent_analyses.length){rec.innerHTML='<p style="color:var(--muted)">No analyses yet. Run one from New Analysis.</p>';return}
+  rec.innerHTML=s.recent_analyses.map(a=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+    <div class="avatar">${a.patient_id||'?'}</div>
+    <div style="flex:1"><div style="font-weight:600">Patient #${a.patient_id}</div>
+    <div style="font-size:12px;color:var(--muted)">${a.created_at||''} · ${a.undertone||'neutral'}</div></div>
+    <span class="badge ${scoreClass(a.overall_score||0)}">${a.overall_score||'—'}</span></div>`).join('');
+}
+async function loadPatients(){
+  const list=await fetch('/api/patients').then(r=>r.json());
+  document.getElementById('pt-table').innerHTML=list.map(p=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar">${initials(p.name)}</div><div><b>${p.name}</b><div style="font-size:12px;color:var(--muted)">${p.email||''}</div></div></div></td>
+    <td>${p.skin_type||'—'}</td><td>${p.date_of_birth||'—'}</td><td>${p.allergies||'—'}</td>
+    <td><button class="btn btn-s" style="padding:6px 12px" onclick="goAnalyze(${p.id})">Analyze</button></td>
+  </tr>`).join('')||'<tr><td colspan=5 style="color:var(--muted)">No patients</td></tr>';
+}
+async function loadSelect(){
+  const list=await fetch('/api/patients').then(r=>r.json());
+  document.getElementById('pt-select').innerHTML=list.map(p=>`<div class="pcard" data-id="${p.id}" onclick="selP(this,${p.id})">
+    <div class="avatar av">${initials(p.name)}</div><div style="font-weight:600">${p.name}</div>
+    <div style="font-size:12px;color:var(--muted)">${p.skin_type||''}</div></div>`).join('');
+}
+function selP(el,id){document.querySelectorAll('.pcard').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');curPatient=id;updateBtn()}
+function goAnalyze(id){curPatient=id;document.querySelector('.nav li[data-v=analyze]').click();setTimeout(()=>{const c=document.querySelector(`.pcard[data-id="${id}"]`);if(c)selP(c,id)},200)}
+document.getElementById('file').onchange=e=>{if(e.target.files[0])handleFile(e.target.files[0])};
+const drop=document.getElementById('drop');
+drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--accent)'};
+drop.ondragleave=()=>drop.style.borderColor='';
+drop.ondrop=e=>{e.preventDefault();drop.style.borderColor='';if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])};
+function handleFile(f){uploaded=f;const r=new FileReader();r.onload=ev=>{document.getElementById('prev-img').src=ev.target.result;document.getElementById('preview').classList.remove('hidden');updateBtn()};r.readAsDataURL(f)}
+function updateBtn(){document.getElementById('btn-go').disabled=!(curPatient&&uploaded)}
+async function runAnalysis(){
+  const btn=document.getElementById('btn-go');btn.disabled=true;btn.textContent='Analyzing…';
+  try{
+    const fd=new FormData();fd.append('image',uploaded);fd.append('patient_id',curPatient);
+    const res=await fetch('/api/analyze',{method:'POST',body:fd});
+    const data=await res.json();
+    if(!data.success){alert(data.error||'Failed');return}
+    const a=data.analysis.results;
+    const plan=data.treatment_plan;
+    let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div><div class="badge badge-b" style="margin-bottom:12px">${a.skin_tone.undertone} undertone · ${a.skin_tone.depth}</div>
+      <div class="scores">`;
+    const metrics=[['Overall',a.overall_health],['Hydration',a.hydration],['Texture',a.texture],['Pores',a.pore_visibility],['Wrinkles',a.wrinkles],['Blemishes',a.blemishes]];
+    metrics.forEach(([n,m])=>{html+=`<div class="score-item"><div style="display:flex;justify-content:space-between"><span>${n}</span><b>${m.score}/100</b></div><div class="score-bar"><div class="score-fill" style="width:${m.score}%"></div></div></div>`});
+    html+=`</div></div><div>
+      <h4 style="margin-bottom:8px;color:var(--primary)">Treatment Plan</h4>
+      <div style="margin-bottom:8px">${(plan.primary_concerns||[]).map(c=>`<span class="badge badge-r" style="margin:2px">${c.replace(/_/g,' ')}</span>`).join('')}</div>
+      <p style="font-size:13px;margin-bottom:6px"><b>AM:</b> ${(plan.am_routine||[]).map(s=>s.action).join(' → ')}</p>
+      <p style="font-size:13px;margin-bottom:6px"><b>PM:</b> ${(plan.pm_routine||[]).map(s=>s.action).join(' → ')}</p>
+      <p style="font-size:13px"><b>Diet:</b> ${(plan.diet_suggestions?.eat_more||[]).join(', ')}</p>
+    </div></div>`;
+    if(data.face_changes&&data.face_changes.length){
+      html+=`<h4 style="margin:20px 0 8px;color:var(--primary)">Changes vs previous</h4>`;
+      data.face_changes.forEach(c=>{html+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${c.metric_name}</span><span>${c.old_value} → <b>${c.new_value}</b> (${c.change_percent}%)</span></div>`});
+    }
+    document.getElementById('results').innerHTML=html;
+    document.getElementById('results-card').classList.remove('hidden');
+    loadDash();
+  }catch(e){alert('Error: '+e.message)}
+  finally{btn.disabled=false;btn.textContent='Analyze Skin →'}
+}
+function showModal(){document.getElementById('modal').classList.add('on')}
+function hideModal(){document.getElementById('modal').classList.remove('on')}
+document.getElementById('np-form').onsubmit=async e=>{
+  e.preventDefault();
+  const data=Object.fromEntries(new FormData(e.target));
+  await fetch('/api/patients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  hideModal();e.target.reset();loadPatients();loadSelect();loadDash();
+};
+async function loadCfg(){
+  const c=await fetch('/api/config').then(r=>r.json());
+  document.getElementById('use-real').checked=!!c.use_real_apis;
+  if(c.skin_analysis_key)document.getElementById('k-skin').placeholder=c.skin_analysis_key;
+  if(c.file_upload_key)document.getElementById('k-upload').placeholder=c.file_upload_key;
+}
+async function saveCfg(){
+  const body={use_real_apis:document.getElementById('use-real').checked,
+    skin_analysis_key:document.getElementById('k-skin').value,
+    file_upload_key:document.getElementById('k-upload').value};
+  const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  document.getElementById('cfg-msg').textContent=d.message||'Saved';
+  loadDash();
+}
+async function testCfg(){
+  const body={use_real_apis:document.getElementById('use-real').checked,
+    skin_analysis_key:document.getElementById('k-skin').value,
+    file_upload_key:document.getElementById('k-upload').value};
+  const r=await fetch('/api/config/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  document.getElementById('cfg-msg').textContent=d.success?('OK '+d.message):('Error '+(d.error||'Failed'));
+}
+loadDash();
+</script>
+</body>
+</html>
